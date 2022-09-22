@@ -8,6 +8,7 @@ from qtpy.QtWidgets import *
 import core.globals as g
 # import core.objects
 from core.dialogs import ReservationDialog
+from core.globals import get_path
 
 
 class ResList_Dock(QDockWidget):
@@ -51,7 +52,7 @@ class ResWidget(QWidget):
             self.resList.populate_reservations(QDate.currentDate())
 
         self.showTodayButton = QToolButton(self)
-        self.showTodayButton.setIcon(QIcon("resources/arrow_refresh.png"))
+        self.showTodayButton.setIcon(QIcon(get_path("arrow_refresh.png")))
         self.showTodayButton.clicked.connect(on_clicked_showtoday)
         self.showTodayButton.setToolTip("Resets the date to today")
         self.showTodayButton.setStatusTip("Resets the date to today")
@@ -100,22 +101,22 @@ class ResWidget(QWidget):
         tb.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         tb.setIconSize(QSize(16, 16))
 
-        toolbar_addRes = tb.addAction(QIcon("./resources/add.png"), "Add")
+        toolbar_addRes = tb.addAction(QIcon(get_path("add.png")), "Add")
         toolbar_addRes.triggered.connect(on_clicked_add)
         toolbar_addRes.setToolTip("Adds a reservation")
         toolbar_addRes.setStatusTip("Adds a reservation")
 
-        toolbar_editRes = tb.addAction(QIcon("./resources/pencil.png"), "Edit")
+        toolbar_editRes = tb.addAction(QIcon(get_path("pencil.png")), "Edit")
         toolbar_editRes.triggered.connect(on_clicked_edit)
         toolbar_editRes.setToolTip("Edits a reservation")
         toolbar_editRes.setStatusTip("Edits a reservation")
 
-        toolbar_arriveRes = tb.addAction(QIcon("./resources/bell.png"), "Arrived")
+        toolbar_arriveRes = tb.addAction(QIcon(get_path("bell.png")), "Arrived")
         toolbar_arriveRes.triggered.connect(toolbar_clickArriveRes)
         toolbar_arriveRes.setToolTip("Marks a reservation as arrived")
         toolbar_arriveRes.setStatusTip("Marks a reservation as arrived")
 
-        toolbar_removeRes = tb.addAction(QIcon("./resources/delete.png"), "Cancel")
+        toolbar_removeRes = tb.addAction(QIcon(get_path("delete.png")), "Cancel")
         toolbar_removeRes.triggered.connect(on_clicked_remove)
         toolbar_removeRes.setToolTip("Cancels a reservation, deletes if pressed twice")
         toolbar_removeRes.setStatusTip("Cancels a reservation, deletes if pressed twice")

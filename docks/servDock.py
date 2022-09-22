@@ -1,11 +1,10 @@
-# import pickle
-# import pickle
 from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 
 import core.globals as g
 import core.objects as o
+from core.globals import get_path
 
 
 class ServList_Dock(QDockWidget):
@@ -26,17 +25,17 @@ class ServerWidget(QWidget):
         toolbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         toolbar.setIconSize(QSize(16, 16))
 
-        toolbar_addServer = toolbar.addAction(QIcon("./resources/add.png"), "Add")
+        toolbar_addServer = toolbar.addAction(QIcon(get_path("add.png")), "Add")
         toolbar_addServer.triggered.connect(self.toolbar_clickAddServer)
         toolbar_addServer.setToolTip("Adds a server")
         toolbar_addServer.setStatusTip("Adds a server")
 
-        toolbar_renameServer = toolbar.addAction(QIcon("./resources/pencil.png"), "Rename")
+        toolbar_renameServer = toolbar.addAction(QIcon(get_path("pencil.png")), "Rename")
         toolbar_renameServer.triggered.connect(self.toolbar_clickRenameServer)
         toolbar_renameServer.setToolTip("Renames a server")
         toolbar_renameServer.setStatusTip("Renames a server")
 
-        toolbar_removeServer = toolbar.addAction(QIcon("./resources/delete.png"), "Remove")
+        toolbar_removeServer = toolbar.addAction(QIcon(get_path("delete.png")), "Remove")
         toolbar_removeServer.triggered.connect(self.toolbar_clickRemoveServer)
         toolbar_removeServer.setToolTip("Removes a server")
         toolbar_removeServer.setStatusTip("Removes a server")
@@ -265,6 +264,8 @@ class ServerList(QListWidget):
                 return
 
             self.parent().serverLineEdit.setText(g.ALL_SERVERS[i.data(Qt.UserRole)].name)
+            self.parent().serverLineEdit.selectAll()
+            self.parent().serverLineEdit.setFocus(Qt.MouseFocusReason)
             self.selected = i
 
         # self.itemPressed.connect(on_item_clicked)

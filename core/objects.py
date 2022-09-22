@@ -26,7 +26,7 @@ def formatTime(time):
 
 
 class POS_Table(QGraphicsItem):
-    def __init__(self, rect: QRectF, server=None, title="", circ=False, rotation=0.0, parent=None):
+    def __init__(self, rect: QRectF, server=-1, title="", circ=False, rotation=0.0, parent=None):
         super(POS_Table, self).__init__(parent)
         self.rect = QRectF(rect)
         self.title = title
@@ -38,7 +38,7 @@ class POS_Table(QGraphicsItem):
         self.setCursor(Qt.PointingHandCursor)
         self.setFlag(QGraphicsItem.ItemIsSelectable, True)
 
-        if server is not None:
+        if server != -1:
             self.server = g.ALL_SERVERS[server]
             self.serverColor = self.server.color
         else:

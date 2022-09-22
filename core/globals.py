@@ -1,5 +1,17 @@
+import os
+import sys
+
 from qtpy.QtCore import Qt, QMargins
 from qtpy.QtGui import QColor, QFont
+
+
+def get_path(filename):
+    if hasattr(sys, "_MEIPASS"):
+        return os.path.join(sys._MEIPASS, filename)
+    else:
+        return filename
+        # return os.path.join("./resources", filename)
+
 
 # START Style Settings#
 
@@ -47,11 +59,13 @@ SERVER_COLORS = [
     # QColor(0, 0, 255)
 ]
 
-# Regular font for UI elements
+# General font used by everything else
 FONT = QFont("Calibri", 20)
-# Font on all tables
+# Floorplan screen text indicating preview mode or edit mode
+FONT_SCENE = QFont("Calibri", 22)
+# Table font
 FONT_TABLE = QFont("Calibri", 20)
-# Font on the server list
+# Server list font
 FONT_SERVERLIST = QFont("Calibri", 16)
 
 # END Style Settings#

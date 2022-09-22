@@ -9,12 +9,14 @@ from qtpy.QtWidgets import *
 
 import core.globals as g
 import core.objects as o
+from core.globals import get_path
 
 
 class ReservationDialog(QDialog):
     def __init__(self, parent=None, index=None):
         super(ReservationDialog, self).__init__(parent, flags=(Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint))
         self.setWindowTitle("Make Reservation")
+        self.setWindowIcon(QIcon(get_path("user.png")))
         self.setSizeGripEnabled(False)
         self.setModal(True)
 
@@ -99,7 +101,7 @@ class ReservationDialog(QDialog):
 
         # Set up the show today button
         self.showTodayButton = QToolButton(self)
-        self.showTodayButton.setIcon(QIcon("resources/arrow_refresh.png"))
+        self.showTodayButton.setIcon(QIcon(get_path("arrow_refresh.png")))
         self.showTodayButton.clicked.connect(on_clicked_showtoday)
         self.showTodayButton.setToolTip("Resets the selected date to today")
 
@@ -180,12 +182,12 @@ class ReservationDialog(QDialog):
             if add_reservation():
                 self.accept()
 
-        self.addButton = QPushButton("Add", self)
+        self.addButton = QPushButton(QIcon(get_path("add.png")), "Add", self)
         self.addButton.setAutoDefault(False)
         self.addButton.clicked.connect(on_clicked_add)
         self.addButton.setToolTip("Adds the reservation without closing this dialog")
 
-        self.addCloseButton = QPushButton("Add and Close", self)
+        self.addCloseButton = QPushButton(QIcon(get_path("accept.png")), "Add and Close", self)
         self.addCloseButton.setDefault(True)
         self.addCloseButton.clicked.connect(on_clicked_addclose)
         self.addCloseButton.setToolTip("Adds the reservation and closes this dialog")
@@ -230,6 +232,9 @@ class TableDialog(QDialog):
     def __init__(self, startRect, circ=False, parent=None, item=None):
         super(TableDialog, self).__init__(parent, flags=(Qt.WindowStaysOnTopHint | Qt.WindowCloseButtonHint))
         self.setWindowTitle("Create Table")
+        self.setWindowIcon(QIcon(get_path("shape_square.png")))
+        self.setSizeGripEnabled(False)
+        self.setModal(True)
 
         self.item = item
         self.startRect = startRect
@@ -266,7 +271,7 @@ class TableDialog(QDialog):
 
         self.finished.connect(on_closed_menu)
 
-        button_ok = QPushButton("Create", self)
+        button_ok = QPushButton(QIcon(get_path("accept.png")), "Create", self)
         button_ok.setAutoDefault(True)
 
         # Editing an existing table
@@ -334,7 +339,10 @@ class TableDialog(QDialog):
 class FloorplanDialog(QDialog):
     def __init__(self, parent=None):
         super(FloorplanDialog, self).__init__(parent, flags=Qt.WindowCloseButtonHint)
-        self.setWindowTitle("Floorplan Editor")
+        self.setWindowTitle("Floorplan Menu")
+        self.setWindowIcon(QIcon(get_path("layout_content.png")))
+        self.setSizeGripEnabled(False)
+        self.setModal(True)
 
         # Populate the stored plan (so that we can restore this plan given we're on a preview
         g.VIEW.store_plan()
@@ -479,7 +487,7 @@ class FloorplanDialog(QDialog):
             new.setData(1, txt)
             plan_list.addItem(new)
 
-        button_addplan = QPushButton(QIcon("resources/add.png"), "Add", self)
+        button_addplan = QPushButton(QIcon(get_path("add.png")), "Add", self)
         button_addplan.clicked.connect(on_clicked_addplan)
 
         def on_clicked_rename():
@@ -502,7 +510,7 @@ class FloorplanDialog(QDialog):
             # Update the text of the visual list item
             curr.setText(txt)
 
-        button_rename = QPushButton(QIcon("resources/pencil.png"), "Rename", self)
+        button_rename = QPushButton(QIcon(get_path("pencil.png")), "Rename", self)
         button_rename.clicked.connect(on_clicked_rename)
 
         def on_clicked_plan(curr: QListWidgetItem):
@@ -571,7 +579,7 @@ class FloorplanDialog(QDialog):
                 # Re-create the categories list
                 create_categories()
 
-        button_delete = QPushButton(QIcon("resources/delete.png"), "Delete", self)
+        button_delete = QPushButton(QIcon(get_path("delete.png")), "Delete", self)
         button_delete.clicked.connect(on_clicked_delete)
 
         def on_clicked_load():
@@ -587,7 +595,7 @@ class FloorplanDialog(QDialog):
 
             self.accept()
 
-        button_load = QPushButton("Load", self)
+        button_load = QPushButton(QIcon(get_path("accept.png")), "Load", self)
         button_load.setAutoDefault(True)
         button_load.clicked.connect(on_clicked_load)
 
@@ -618,23 +626,31 @@ class SettingsDialog(QDialog):
     def __init__(self, parent=None):
         super(SettingsDialog, self).__init__(parent, flags=Qt.WindowCloseButtonHint)
         self.setWindowTitle("Settings")
+        self.setWindowIcon(QIcon(get_path("cog.png")))
+        self.setSizeGripEnabled(False)
+        self.setModal(True)
 
         tabs = QTabWidget(self)
-        tabs.addTab(ReservationTab(self), "Reservations")
+        tabs.addTab(GeneralTab(self), "General")
         tabs.addTab(OverflowTab(self), "Overflow")
 
-        button_box = QDialogButtonBox(QDialogButtonBox.Ok)
-        button_box.accepted.connect(self.accept)
+        button_accept = QPushButton(QIcon(get_path("accept.png")), "Done", self)
+        button_accept.clicked.connect(self.accept)
 
         layout = QVBoxLayout(self)
         layout.setSpacing(g.DIA_SPACING)
         # layout.setMargin(g.DIA_MARGIN)
         layout.addWidget(tabs)
-        layout.addWidget(button_box)
+        layout.addWidget(button_accept)
 
         self.setLayout(layout)
 
         def on_closed_menu():
+            # If the max recent floorplans was lowered, trim the recents off the top
+            if len(g.recentFloorplans) > g.SETTINGS.value("settings/maxrecents"):
+                del g.recentFloorplans[g.SETTINGS.value("settings/maxrecents"):]
+
+            g.SETTINGS.setValue("data/recentFloorplans", g.recentFloorplans)
             g.SETTINGS.setValue("data/overflowRules", g.overflowRules)
             g.SETTINGS.sync()
             g.SERVER_LIST.widget().pred.update()
@@ -646,13 +662,16 @@ class SettingsDialog(QDialog):
         self.exec_()
 
 
-class ReservationTab(QWidget):
+class GeneralTab(QWidget):
     def __init__(self, parent=None):
-        super(ReservationTab, self).__init__(parent)
-        resTab = QFormLayout(self)
-        resTab.setSpacing(g.DIA_SPACING)
+        super(GeneralTab, self).__init__(parent)
+        layout = QFormLayout(self)
+        layout.setSpacing(g.DIA_SPACING)
 
         # resTab.setMargin(g.DIA_MARGIN)
+
+        minResTimeBox = QTimeEdit(g.SETTINGS.value("settings/minResTime"), self)
+        maxResTimeBox = QTimeEdit(g.SETTINGS.value("settings/maxResTime"), self)
 
         def on_changed_mintime(time):
             g.SETTINGS.setValue("settings/minResTime", time)
@@ -663,36 +682,43 @@ class ReservationTab(QWidget):
         def on_checked_24hour(s):
             if s > 0:
                 g.SETTINGS.setValue("settings/fullhour", 1)
-                g.minResTimeBox.setDisplayFormat("hh:mm")
-                g.maxResTimeBox.setDisplayFormat("hh:mm")
+                minResTimeBox.setDisplayFormat("hh:mm")
+                maxResTimeBox.setDisplayFormat("hh:mm")
             else:
                 g.SETTINGS.setValue("settings/fullhour", 0)
-                g.minResTimeBox.setDisplayFormat("h:mm A")
-                g.maxResTimeBox.setDisplayFormat("h:mm A")
+                minResTimeBox.setDisplayFormat("h:mm A")
+                maxResTimeBox.setDisplayFormat("h:mm A")
 
             widg = g.RES_LIST.widget()
             widg.resList.populate_reservations(widg.resDateEdit.date())
 
-        g.minResTimeBox = QTimeEdit(g.SETTINGS.value("settings/minResTime"), self)
-        g.minResTimeBox.timeChanged.connect(on_changed_mintime)
-
-        g.maxResTimeBox = QTimeEdit(g.SETTINGS.value("settings/maxResTime"), self)
-        g.maxResTimeBox.timeChanged.connect(on_changed_maxtime)
+        minResTimeBox.timeChanged.connect(on_changed_mintime)
+        maxResTimeBox.timeChanged.connect(on_changed_maxtime)
 
         fullHourCheckBox = QCheckBox("24-Hour Times", self)
         fullHourCheckBox.stateChanged.connect(on_checked_24hour)
         fullHourCheckBox.setChecked(bool(g.SETTINGS.value("settings/fullhour")))
 
-        if bool(g.SETTINGS.value("settings/fullhour")):
-            g.minResTimeBox.setDisplayFormat("hh:mm")
-            g.maxResTimeBox.setDisplayFormat("hh:mm")
-        else:
-            g.minResTimeBox.setDisplayFormat("h:mm A")
-            g.maxResTimeBox.setDisplayFormat("h:mm A")
+        def on_changed_maxrecents(n):
+            g.SETTINGS.setValue("settings/maxrecents", n)
 
-        resTab.addRow("Minimum Reservation Time:", g.minResTimeBox)
-        resTab.addRow("Maximum Reservation Time:", g.maxResTimeBox)
-        resTab.addRow(fullHourCheckBox)
+        maxRecentPlans = QSpinBox(self)
+        maxRecentPlans.setRange(1, 100)
+        maxRecentPlans.setSingleStep(1)
+        maxRecentPlans.setValue(g.SETTINGS.value("settings/maxrecents"))
+        maxRecentPlans.valueChanged.connect(on_changed_maxrecents)
+
+        if bool(g.SETTINGS.value("settings/fullhour")):
+            minResTimeBox.setDisplayFormat("hh:mm")
+            maxResTimeBox.setDisplayFormat("hh:mm")
+        else:
+            minResTimeBox.setDisplayFormat("h:mm A")
+            maxResTimeBox.setDisplayFormat("h:mm A")
+
+        layout.addRow("Minimum Reservation Time", minResTimeBox)
+        layout.addRow("Maximum Reservation Time", maxResTimeBox)
+        layout.addRow(fullHourCheckBox)
+        layout.addRow("Maximum Recent Floorplans", maxRecentPlans)
 
 
 class OverflowTab(QWidget):
@@ -731,9 +757,9 @@ class OverflowTab(QWidget):
         overflowMultBox.setValue(float(g.SETTINGS.value("settings/overflowMultiplier")))
         overflowMultBox.valueChanged.connect(on_changed_overflowmult)
 
-        newButton = QPushButton(QIcon("resources/add.png"), "Add", self)
+        newButton = QPushButton(QIcon(get_path("add.png")), "Add", self)
         newButton.clicked.connect(overflowTable.add_rule)
-        delButton = QPushButton(QIcon("resources/delete.png"), "Delete", self)
+        delButton = QPushButton(QIcon(get_path("delete.png")), "Delete", self)
         delButton.clicked.connect(on_clicked_delete)
 
         hLayout = QHBoxLayout()

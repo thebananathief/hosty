@@ -7,6 +7,7 @@ from qtpy.QtWidgets import *
 
 import core.globals as g
 from core.dialogs import SettingsDialog, TableDialog, FloorplanDialog
+from core.globals import get_path
 from core.objects import POS_Server, POS_Table
 from docks.resDock import ResList_Dock
 from docks.servDock import ServList_Dock
@@ -31,35 +32,35 @@ class MainToolBar(QToolBar):
         self.setIconSize(QSize(16, 16))
 
         # Layout menu button
-        self.act_floorplan = self.addAction(QIcon("resources/layout_content.png"), "Floorplan Menu")
+        self.act_floorplan = self.addAction(QIcon(get_path("layout_content.png")), "Floorplan Menu")
         self.act_floorplan.setToolTip("Opens the floorplan menu")
         self.act_floorplan.setStatusTip("Opens the floorplan menu")
 
         # Table / Head count mode swap button
-        self.act_swapMode = self.addAction(QIcon("resources/user.png"), "Swap Heads/Tables")
+        self.act_swapMode = self.addAction(QIcon(get_path("user.png")), "Swap Counting Mode")
         self.act_swapMode.setToolTip("Swaps between head count or table count modes")
         self.act_swapMode.setStatusTip("Swaps between head count or table count modes")
 
         # Settings menu button
-        self.act_settings = self.addAction(QIcon("resources/cog.png"), "Settings")
+        self.act_settings = self.addAction(QIcon(get_path("cog.png")), "Settings")
         self.act_settings.setToolTip("Opens the settings menu")
         self.act_settings.setStatusTip("Opens the settings menu")
 
         # Editing mode toggle button
-        self.act_editToggle = self.addAction(QIcon("resources/wrench.png"), "Edit Mode")
+        self.act_editToggle = self.addAction(QIcon(get_path("wrench.png")), "Edit Mode")
         self.act_editToggle.setToolTip("Toggles edit mode")
         self.act_editToggle.setStatusTip("Toggles edit mode")
         self.act_editToggle.setCheckable(True)
 
         # Add rectangular table button (only shows on edit mode)
-        self.act_addRectTbl = self.addAction(QIcon("resources/rect.png"), "Add Rectangle Table")
+        self.act_addRectTbl = self.addAction(QIcon(get_path("rect.png")), "Add Rectangle Table")
         self.act_addRectTbl.setToolTip("Adds a rectangle table into the layout")
         self.act_addRectTbl.setStatusTip("Adds a rectangle table into the layout")
         self.act_addRectTbl.setCheckable(True)
         self.act_addRectTbl.setVisible(False)
 
         # Add circular table button (only shows on edit mode)
-        self.act_addCircTbl = self.addAction(QIcon("resources/ellipse.png"), "Add Elliptical Table")
+        self.act_addCircTbl = self.addAction(QIcon(get_path("ellipse.png")), "Add Elliptical Table")
         self.act_addCircTbl.setToolTip("Adds an elliptical table into the layout")
         self.act_addCircTbl.setStatusTip("Adds an elliptical table into the layout")
         self.act_addCircTbl.setCheckable(True)
@@ -69,7 +70,8 @@ class MainToolBar(QToolBar):
 class MainWindow(QMainWindow):
     def __init__(self, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
-        self.setWindowTitle("Host Program")
+        self.setWindowTitle("Hosty")
+        self.setWindowIcon(QIcon(get_path("application_view_tile.png")))
 
         self.rubberBandRect = QRect(1, 0, 0, 0)
         self.toolbar = self.create_toolbar()
@@ -102,19 +104,17 @@ class MainWindow(QMainWindow):
 
         # If we have recents to iterate through
         if len(g.recentFloorplans) > 0:
-            # Query floorplans table for the plan's name
             con = sql.connect("hostprogram.db")
-            con.row_factory = sql.Row
             cur = con.cursor()
-            plansList = cur.execute("SELECT plan_id, name FROM floorplans").fetchall()
-            con.close()
 
-            for row in plansList:
-                plan_id = int(row["plan_id"])
-                if str(plan_id) in g.recentFloorplans:
-                    # Add each recent floorplan to the menu
-                    new = FloorplanAction(plan_id, row["name"], m)
-                    m.addAction(new)
+            # Select query is ordering plans in alphabetical, we need to sort them by the recents list
+            for idx in g.recentFloorplans:
+                plan = cur.execute("SELECT plan_id, name FROM floorplans WHERE plan_id = ?", str(idx)).fetchone()
+                # Add each recent floorplan to the menu
+                new = FloorplanAction(int(plan[0]), plan[1], m)
+                m.addAction(new)
+
+            con.close()
 
         # No recents, display so
         else:
@@ -162,11 +162,11 @@ class MainWindow(QMainWindow):
             # If we're on headcount, switch to table count and change the icon of the swap button
             if g.COUNT_MODE == "heads":
                 g.COUNT_MODE = "tables"
-                self.toolbar.act_swapMode.setIcon(QIcon("resources/shape_square.png"))
+                self.toolbar.act_swapMode.setIcon(QIcon(get_path("shape_square.png")))
             # Vice versa
             else:
                 g.COUNT_MODE = "heads"
-                self.toolbar.act_swapMode.setIcon(QIcon("resources/user.png"))
+                self.toolbar.act_swapMode.setIcon(QIcon(get_path("user.png")))
 
             # Reset all server's counts
             for server in g.ALL_SERVERS:
@@ -233,11 +233,10 @@ class GraphicsScene(QGraphicsScene):
         self.setItemIndexMethod(QGraphicsScene.NoIndex)
 
         # Create a label on the scene to indicate edit mode (invisible)
-        font = QFont("Calibri", 22)
-        self.editLabel = self.addSimpleText("Editing Mode", font)
+        self.editLabel = self.addSimpleText("Editing Mode", g.FONT_SCENE)
         self.editLabel.setBrush(QBrush(QColor(255, 255, 255, 230), Qt.SolidPattern))
         self.editLabel.setVisible(False)
-        self.editLabel.setPos(25, 25)
+        self.editLabel.setPos(20, 20)
         self.editLabel.setZValue(1)
 
     def recenter(self):
@@ -331,10 +330,9 @@ class GraphicsView(QGraphicsView):
             tempScene = GraphicsScene()
 
             # Create a label indicating this is a preview floorplan
-            font = QFont("Calibri", 22)
-            tempScene.previewLabel = tempScene.addSimpleText("Preview Mode", font)
+            tempScene.previewLabel = tempScene.addSimpleText("Preview Mode", g.FONT_SCENE)
             tempScene.previewLabel.setBrush(QBrush(QColor(230, 230, 230, 230), Qt.SolidPattern))
-            tempScene.previewLabel.setPos(25, 25)
+            tempScene.previewLabel.setPos(20, 20)
             tempScene.previewLabel.setZValue(1)
 
             # Populate the preview scene with tables and servers
@@ -355,14 +353,14 @@ class GraphicsView(QGraphicsView):
                 # Remove it from recents (so that the order is correct)
                 # idx = g.recentFloorplans.index(plan_id)
                 # del g.recentFloorplans[idx]
-                g.recentFloorplans.remove(str(plan_id))
+                g.recentFloorplans.remove(plan_id)
 
             # Add plan to the recents
-            g.recentFloorplans.insert(0, str(plan_id))
+            g.recentFloorplans.insert(0, plan_id)
 
             # Too many recents, delete the oldest one
-            if len(g.recentFloorplans) > 5:
-                del g.recentFloorplans[5]
+            if len(g.recentFloorplans) > g.SETTINGS.value("settings/maxrecents"):
+                del g.recentFloorplans[g.SETTINGS.value("settings/maxrecents")]
 
             # Update the persistant floorplans settings data (for persisting the recents)
             g.SETTINGS.setValue("data/recentFloorplans", g.recentFloorplans)
@@ -387,10 +385,38 @@ if __name__ == "__main__":
     QCoreApplication.setOrganizationName("Navimode")
     QCoreApplication.setApplicationName("Hosty")
 
+    # Create database tables if not already made
+    con = sql.connect("hostprogram.db")
+    cur = con.cursor()
+    cur.execute(""" CREATE TABLE IF NOT EXISTS floorplans (
+                        plan_id INTEGER PRIMARY KEY,
+                        name TEXT NOT NULL,
+                        server_count INTEGER NOT NULL
+                    )""")
+    cur.execute(""" CREATE TABLE IF NOT EXISTS plan_tables (
+                        table_id INTEGER PRIMARY KEY,
+                        data BLOB NOT NULL,
+                        plan_id INTEGER NOT NULL,
+                        FOREIGN KEY(plan_id) REFERENCES floorplans(plan_id)
+                    )""")
+    cur.execute(""" CREATE TABLE IF NOT EXISTS reservations (
+                        res_id INTEGER PRIMARY KEY,
+                        date NUMERIC NOT NULL,
+                        time NUMERIC NOT NULL,
+                        name TEXT NOT NULL,
+                        size INTEGER NOT NULL,
+                        phone TEXT,
+                        note TEXT,
+                        state INTEGER DEFAULT 0
+                    )""")
+    con.commit()
+    con.close()
+
     # Setup default settings
     g.SETTINGS = QSettings()
 
     # No value set in persistant settings
+    g.SETTINGS.setValue("data/recentFloorplans", g.recentFloorplans)
     if not g.SETTINGS.value("b_preview"):
         # Set the default value
         g.SETTINGS.setValue("b_preview", 0)
@@ -402,6 +428,8 @@ if __name__ == "__main__":
         g.SETTINGS.setValue("settings/maxResTime", QTime(23, 59))
     if not g.SETTINGS.value("settings/overflowMultiplier"):
         g.SETTINGS.setValue("settings/overflowMultiplier", 1)
+    if not g.SETTINGS.value("settings/maxrecents"):
+        g.SETTINGS.setValue("settings/maxrecents", 5)
     if not g.SETTINGS.value("data/overflowRules"):
         g.SETTINGS.setValue("data/overflowRules", g.overflowRules)
     if not g.SETTINGS.value("data/recentFloorplans"):
