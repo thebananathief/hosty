@@ -794,8 +794,9 @@ class RuleTable(QTableView):
         self.resize(200, 150)
         self.setItemDelegate(RuleDelegate(self))
 
-        model = QStandardItemModel(0, 3)  # my data model
-        model.setHorizontalHeaderLabels(["Name", "Threshold", "Color"])  # HorzHead Labels
+        # Table structure
+        model = QStandardItemModel(0, 3)
+        model.setHorizontalHeaderLabels(["Note", "Threshold", "Color"])
         self.setModel(model)
 
         hHead = QHeaderView(Qt.Horizontal)
