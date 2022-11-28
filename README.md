@@ -8,7 +8,7 @@ It also provides basic reservation management.
 
 - Table states (Clean, Sat, Dirty)
 - Floorplan Saving
-  - Tracks up to 5 previously loaded floorplans for quick access
+  - Tracks previously loaded floorplans for quick access
   - Preview floorplans before loading them (only with the floorplan dialog)
 - 2 Counting modes (table count or head count)
 - Track server's total and active tables or head count
