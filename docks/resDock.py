@@ -75,7 +75,6 @@ class ResWidget(QWidget):
             if not curr or len(curr) < 1:
                 return print("invalid selection")
 
-            # Since a row of cells is selected (5 indexes), we need to only use the first one
             self.resList.arrive_reservation(curr[0])
 
         def on_clicked_edit():
