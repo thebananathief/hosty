@@ -75,24 +75,22 @@ class ResWidget(QWidget):
             if not curr or len(curr) < 1:
                 return print("invalid selection")
 
-            for index in curr:
-                self.resList.arrive_reservation(index)
+            # Since a row of cells is selected (5 indexes), we need to only use the first one
+            self.resList.arrive_reservation(curr[0])
 
         def on_clicked_edit():
             curr = self.resList.selectedIndexes()
             if not curr or len(curr) < 1:
                 return print("invalid selection")
 
-            for index in curr:
-                self.resList.edit_reservation(index)
+            self.resList.edit_reservation(curr[0])
 
         def on_clicked_remove():
             curr = self.resList.selectedIndexes()
             if not curr or len(curr) < 1:
                 return print("invalid selection")
 
-            for index in curr:
-                self.resList.cancel_reservation(index)
+            self.resList.cancel_reservation(curr[0])
 
         def on_clicked_add():
             ReservationDialog(self)
@@ -319,10 +317,12 @@ class ResList(QTableView):
 
         # If the reservation hasn't arrived, set it to arrive, if it has arrived, set it to not arrived
         self.set_reservation_state(model_index, 1) if res_state == 0 else self.set_reservation_state(model_index, 0)
+        self.clearSelection()
 
     # Create the edit reservation dialog
     def edit_reservation(self, model_index):
         ReservationDialog(self, str(self.model().index(model_index.row(), 0).data(Qt.UserRole)))
+        self.clearSelection()
 
     # Mark a reservation as canceled or delete if ran twice
     def cancel_reservation(self, model_index):
@@ -338,6 +338,8 @@ class ResList(QTableView):
         else:
             # Mark it as canceled
             self.set_reservation_state(model_index, 2)
+
+        self.clearSelection()
 
 
 class ResDelegate(QStyledItemDelegate):
