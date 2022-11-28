@@ -110,8 +110,9 @@ class ServerPredictor(QWidget):
         super(ServerPredictor, self).__init__(parent)
         self.setSizePolicy(QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed))
         self.choice = ""
-        self.overflowColor = g.SETTINGS.value("data/overflowRules")["default"]["color"]
+        self.overflow_color = g.SETTINGS.value("data/overflowRules")["default"]["color"]
         self.overflow_score = 0
+        self.overflow_name = ""
 
         # Initialize rects for the server guesser and overflow boxes
         self.predict_rect = self.rect().adjusted(0, 0, 0, 0)
@@ -149,8 +150,9 @@ class ServerPredictor(QWidget):
         for server in g.ALL_SERVERS:
             active = server.headActive
 
+            # Prioritize servers with no active heads
             if server.headActive == 0:
-                active = -20
+                active = -20 # raise this number to prioritize less
 
             scores[server] = highestTotal - server.headTotal - active
 
@@ -167,23 +169,23 @@ class ServerPredictor(QWidget):
         self.update()
 
     def calculate_overflow(self):
-        # BUG: OverflowScore fluctuates weirdly whenever multiple tables are down
         prev = self.overflow_score
         self.overflow_score = 0
 
-        # Must copy the table because we'll be removing recents from it as we iterate
-        # (removing during iteration leads to sometimes skipping one of the objects)
+        # Must copy the table because we'll be removing recents from the original as we iterate
+        # Iterating the original would result in skipping a recent table every time one gets removed
+        # because the indexes past the removal all get decremented
         tempRec = g.RECENTS.copy()
 
         # Overflow Score Calculation
         for seat in tempRec:
-            # Seconds elapsed since the table was sat / 60
-            # 5 seconds = 0.083
-            # 60 seconds = 1
-            min_diff = seat["time"].secsTo(QTime.currentTime()) / 60
+            # Get the seconds elapsed since the table was sat and convert to ticks
+            elapsed_ticks = seat["time"].secsTo(QTime.currentTime()) / 60
+            # 5 seconds = 0.083 tick
+            # 60 seconds = 1 tick
 
             # customers - (elapsed * multiplier)
-            sc = round(seat["num"] - (min_diff * float(g.SETTINGS.value("settings/overflowMultiplier"))), 4)
+            sc = round(seat["num"] - (elapsed_ticks * float(g.SETTINGS.value("settings/overflowMultiplier"))), 4)
 
             # If this table's score is less than 0, remove it from the recents (deemed unecessary)
             if sc <= 0:
@@ -191,7 +193,7 @@ class ServerPredictor(QWidget):
             else:
                 self.overflow_score += sc
 
-        # Sort overflow rules by threshold
+        # Sort overflow rules by threshold (descending) so that we can stop iterating them when it finds the correct threshold 
         tempTbl = []
         for rule in g.overflowRules:
             tempTbl.append(rule)
@@ -199,12 +201,20 @@ class ServerPredictor(QWidget):
         def sort_by_threshold(d):
             return g.overflowRules[d]["num"]
 
-        tempTbl.sort(key=sort_by_threshold)
+        tempTbl.sort(key=sort_by_threshold, reverse=True)
 
-        # Set overflow color
+        # Iterate the sorted thresholds
         for rule in tempTbl:
+            # If the score is above this threshold, set overflow color and note and stop iterating
             if self.overflow_score > g.overflowRules[rule]["num"]:
-                self.overflowColor = g.overflowRules[rule]["color"]
+                self.overflow_color = g.overflowRules[rule]["color"]
+
+                if rule == "default":
+                    self.overflow_name = ""
+                else:
+                    self.overflow_name = " ({})".format(rule)
+                
+                break
 
         self.update()
 
@@ -238,10 +248,10 @@ class ServerPredictor(QWidget):
             p.setFont(g.FONT_SERVERLIST)
 
             # Draw box and text for overflow
-            p.setBrush(QBrush(self.overflowColor, Qt.SolidPattern))
+            p.setBrush(QBrush(self.overflow_color, Qt.SolidPattern))
             p.drawRoundedRect(self.overflow_rect, 2, 2)
             p.drawText(self.overflow_text_rect, (Qt.AlignCenter | Qt.AlignVCenter),
-                       "Overflow:" + str(round(self.overflow_score, 1)))
+                        "Overflow: {}{}".format(str(round(self.overflow_score, 1)), self.overflow_name))
         # No prediction
         else:
             p.drawText(self.predict_no_server_rect, (Qt.AlignCenter | Qt.AlignVCenter), "Add a server!")

@@ -195,31 +195,29 @@ class POS_Table(QGraphicsItem):
         menu.exec_(QCursor.pos(), editAct)
 
     def wheelEvent(self, event):
-        if not g.EDIT_MODE:
+        # Only work in edit mode and needs to be at least 2 servers
+        if not g.EDIT_MODE or len(g.ALL_SERVERS) <= 1:
             return
 
+        # If server is currently None, set to the first server
         if not self.server:
-            if len(g.ALL_SERVERS) < 1:
-                return
-
             self.server = g.ALL_SERVERS[0]
 
-        servNum = self.server.num
-
+        servIdx = self.server.num
         if event.delta() > 0:
-            servNum += 1
+            servIdx -= 1
 
-            if servNum >= len(g.ALL_SERVERS):
-                servNum = 0
-
-            self.change_server(servNum)
+            # Skip to last server
+            if servIdx < 0:
+                servIdx = len(g.ALL_SERVERS) - 1
         else:
-            servNum -= 1
+            servIdx += 1
 
-            if servNum < 0:
-                servNum = len(g.ALL_SERVERS) - 1
+            # Skip to first server
+            if servIdx >= len(g.ALL_SERVERS):
+                servIdx = 0
 
-            self.change_server(servNum)
+        self.change_server(servIdx)
 
     # Rotate the object
     def rotate(self, rot):

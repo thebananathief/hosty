@@ -264,6 +264,7 @@ class TableDialog(QDialog):
         for server in g.ALL_SERVERS:
             pix = QPixmap(12, 12)
             pix.fill(server.color)
+            # Each item's userData is the server index
             self.serverBox.addItem(QIcon(pix), server.name, server.num)
 
         def on_closed_menu():
@@ -281,6 +282,7 @@ class TableDialog(QDialog):
             self.rotSpinBox.setValue(self.item.rotation())
             self.circCheckBox.setChecked(self.item.circ)
             if self.item.server:
+                # Set the server selector's index to the table's server's index
                 self.serverBox.setCurrentIndex(self.item.server.num)
         # Making a new table
         else:
@@ -290,7 +292,12 @@ class TableDialog(QDialog):
         def on_clicked_ok():
             rect = QRectF(startRect.x(), startRect.y(), self.wSpinBox.value(), self.hSpinBox.value())
 
+            # Get the server index to set the table to
             s = self.serverBox.currentData()
+            # If no servers, set to -1
+            if s is None:
+                s = -1
+
             if self.item:
                 self.item.title = self.titleBox.text()
                 self.item.prepareGeometryChange()
@@ -629,6 +636,7 @@ class SettingsDialog(QDialog):
         self.setWindowIcon(QIcon(get_path("cog.png")))
         self.setSizeGripEnabled(False)
         self.setModal(True)
+        self.setMaximumWidth(300)
 
         tabs = QTabWidget(self)
         tabs.addTab(GeneralTab(self), "General")
@@ -718,7 +726,7 @@ class GeneralTab(QWidget):
         layout.addRow("Minimum Reservation Time", minResTimeBox)
         layout.addRow("Maximum Reservation Time", maxResTimeBox)
         layout.addRow(fullHourCheckBox)
-        layout.addRow("Maximum Recent Floorplans", maxRecentPlans)
+        layout.addRow("Recent Floorplans", maxRecentPlans)
 
 
 class OverflowTab(QWidget):
@@ -739,23 +747,25 @@ class OverflowTab(QWidget):
                 # g.SETTINGS.setValue("data/overflowRules", g.overflowRules)
 
         label = QLabel(
-            "The program will calculate an overflow score\n"
-            "for recently sat tables based on this formula:\n"
-            "# customers - (minutes passed * overflow multiplier)\n"
-            "The overflow multiplier is basically a 'kitchen strength'\n"
-            "multiplier, the overflow rules in the table below allow you to\n"
-            "change the color it shows when going past a certain threshold.")
+            "Overflow is calculated for recently sat tables based on this formula:<br>"
+            "<i># customers - (minutes passed * kitchen speed)</i><br>"
+            "A kitchen speed of 1.0 means the kitchen can serve 1 head every minute (0.5 = 1 customer every 2 minutes, 2.0 = 2 customers every minute).")
         label.setAlignment(Qt.AlignCenter)
         label.setWordWrap(True)
+        label.setTextFormat(Qt.RichText)
 
         def on_changed_overflowmult(n):
             g.SETTINGS.setValue("settings/overflowMultiplier", n)
 
         overflowMultBox = QDoubleSpinBox(self)
-        overflowMultBox.setRange(0.1, 20)
+        overflowMultBox.setRange(0.1, 100)
         overflowMultBox.setSingleStep(0.5)
         overflowMultBox.setValue(float(g.SETTINGS.value("settings/overflowMultiplier")))
         overflowMultBox.valueChanged.connect(on_changed_overflowmult)
+
+        label2 = QLabel("The thresholds in the table below allow you to change the color and note it shows when going past a certain threshold. (Double click a cell to modify)")
+        label2.setAlignment(Qt.AlignCenter)
+        label2.setWordWrap(True)
 
         newButton = QPushButton(QIcon(get_path("add.png")), "Add", self)
         newButton.clicked.connect(overflowTable.add_rule)
@@ -767,7 +777,8 @@ class OverflowTab(QWidget):
         hLayout.addWidget(delButton)
 
         overflowTab.addRow(label)
-        overflowTab.addRow("Overflow Multiplier:", overflowMultBox)
+        overflowTab.addRow("Kitchen Speed", overflowMultBox)
+        overflowTab.addRow(label2)
         overflowTab.addRow(hLayout)
         overflowTab.addRow(overflowTable)
 
@@ -784,7 +795,7 @@ class RuleTable(QTableView):
         self.setItemDelegate(RuleDelegate(self))
 
         model = QStandardItemModel(0, 3)  # my data model
-        model.setHorizontalHeaderLabels(["Rule", "Threshold", "Color"])  # HorzHead Labels
+        model.setHorizontalHeaderLabels(["Name", "Threshold", "Color"])  # HorzHead Labels
         self.setModel(model)
 
         hHead = QHeaderView(Qt.Horizontal)
