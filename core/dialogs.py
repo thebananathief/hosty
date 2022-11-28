@@ -9,7 +9,7 @@ from qtpy.QtWidgets import *
 
 import core.globals as g
 import core.objects as o
-from core.globals import get_path
+from core.globals import get_path, create_connection
 
 
 class ReservationDialog(QDialog):
@@ -24,7 +24,7 @@ class ReservationDialog(QDialog):
         self.editRes = None
         if index is not None:
             # Query reservations table for the reservation that matches this id
-            con = sql.connect("hostprogram.db")
+            con = create_connection()
             con.row_factory = sql.Row
             cur = con.cursor()
             self.editRes = cur.execute("SELECT * FROM reservations WHERE res_id = ?", index).fetchone()
@@ -143,7 +143,7 @@ class ReservationDialog(QDialog):
             # If a reservation was supplied (editing an existing one)
             if index is not None:
                 # Update the reservation in the database with its new data
-                con = sql.connect("hostprogram.db")
+                con = create_connection()
                 cur = con.cursor()
                 cur.execute(
                     "UPDATE reservations SET (date, time, name, size, phone, note) = (date(?), time(?), ?, ?, ?, ?) WHERE res_id = ?",
@@ -158,7 +158,7 @@ class ReservationDialog(QDialog):
                 con.close()
             else:
                 # Insert a new reservation into the database
-                con = sql.connect("hostprogram.db")
+                con = create_connection()
                 cur = con.cursor()
                 cur.execute("INSERT INTO reservations (date, time, name, size, phone, note) VALUES(?, ?, ?, ?, ?, ?)",
                             (self.arrivalDateBox.date().toString(Qt.ISODate),
@@ -371,7 +371,7 @@ class FloorplanDialog(QDialog):
             count = curr.data(Qt.UserRole)
 
             # Query for all floorplans with this server count
-            con = sql.connect("hostprogram.db")
+            con = create_connection()
             con.row_factory = sql.Row
             cur = con.cursor()
             plans = cur.execute("SELECT * FROM floorplans WHERE server_count = ?", str(count)).fetchall()
@@ -394,7 +394,7 @@ class FloorplanDialog(QDialog):
             category_list.clear()
 
             # Query for all floorplans
-            con = sql.connect("hostprogram.db")
+            con = create_connection()
             con.row_factory = sql.Row
             cur = con.cursor()
             plans = cur.execute("SELECT * FROM floorplans").fetchall()
@@ -447,7 +447,7 @@ class FloorplanDialog(QDialog):
             #     return print("no servers error")
 
             # Insert the floorplan into the database
-            con = sql.connect("hostprogram.db")
+            con = create_connection()
             cur = con.cursor()
             cur.execute("INSERT INTO floorplans (name, server_count) VALUES (?, ?)", (txt, len(g.ALL_SERVERS)))
             # Get the plan id of the floorplan we just added
@@ -509,7 +509,7 @@ class FloorplanDialog(QDialog):
 
             plan_id = curr.data(Qt.UserRole)
             # Update name query
-            con = sql.connect("hostprogram.db")
+            con = create_connection()
             cur = con.cursor()
             cur.execute("UPDATE floorplans SET name = ? WHERE plan_id = ?", (txt, str(plan_id)))
             con.commit()
@@ -571,7 +571,7 @@ class FloorplanDialog(QDialog):
                 g.recentFloorplans.remove(plan_id)
 
             # Delete query
-            con = sql.connect("hostprogram.db")
+            con = create_connection()
             cur = con.cursor()
             cur.execute("DELETE FROM floorplans WHERE plan_id = ?", str(plan_id))
             cur.execute("DELETE FROM plan_tables WHERE plan_id = ?", str(plan_id))

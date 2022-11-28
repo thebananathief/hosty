@@ -1,9 +1,15 @@
 import os
 import sys
+import sqlite3 as sql
 
 from qtpy.QtCore import Qt, QMargins
 from qtpy.QtGui import QColor, QFont
 
+
+# Convenience function to connect to the same database file
+def create_connection():
+    con = sql.connect("hosty.db")
+    return con
 
 def get_path(filename):
     if hasattr(sys, "_MEIPASS"):

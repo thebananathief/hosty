@@ -8,7 +8,7 @@ from qtpy.QtWidgets import *
 import core.globals as g
 # import core.objects
 from core.dialogs import ReservationDialog
-from core.globals import get_path
+from core.globals import get_path, create_connection
 
 
 class ResList_Dock(QDockWidget):
@@ -195,7 +195,7 @@ class ResList(QTableView):
             self.model().removeRows(0, self.model().rowCount())
 
         # Query reservations table for the reservations on this date
-        con = sql.connect("hostprogram.db")
+        con = create_connection()
         con.row_factory = sql.Row
         cur = con.cursor()
         resData = cur.execute("SELECT * FROM reservations WHERE date = date('" + date.toString(Qt.ISODate) + "')") \
@@ -292,7 +292,7 @@ class ResList(QTableView):
         res_id = self.model().index(model_index.row(), 0).data(Qt.UserRole)
 
         # Update the database with the new state (not arrived)
-        con = sql.connect("hostprogram.db")
+        con = create_connection()
         cur = con.cursor()
         cur.execute("UPDATE reservations SET state = ? WHERE res_id = ?",
                     (state, res_id))
@@ -408,7 +408,7 @@ class ResDelegate(QStyledItemDelegate):
         # Time
         if index.column() == 0:
             # Execute an update command on the database
-            con = sql.connect("hostprogram.db")
+            con = create_connection()
             cur = con.cursor()
             cur.execute("UPDATE reservations SET time = time(?) WHERE res_id = ?",
                         (editor.time().toString("hh:mm"), res_id))
@@ -420,7 +420,7 @@ class ResDelegate(QStyledItemDelegate):
 
         # Size
         elif index.column() == 1:
-            con = sql.connect("hostprogram.db")
+            con = create_connection()
             cur = con.cursor()
             cur.execute("UPDATE reservations SET size = ? WHERE res_id = ?",
                         (editor.value(), res_id))
@@ -431,7 +431,7 @@ class ResDelegate(QStyledItemDelegate):
 
         # Name
         elif index.column() == 2:
-            con = sql.connect("hostprogram.db")
+            con = create_connection()
             cur = con.cursor()
             cur.execute("UPDATE reservations SET name = ? WHERE res_id = ?",
                         (editor.text(), res_id))
@@ -445,7 +445,7 @@ class ResDelegate(QStyledItemDelegate):
             # Box text contains dashes from formatting, so we need to unformat it by removing the dashes
             u_str = editor.text().replace("-", "")
 
-            con = sql.connect("hostprogram.db")
+            con = create_connection()
             cur = con.cursor()
             cur.execute("UPDATE reservations SET phone = ? WHERE res_id = ?",
                         (u_str, res_id))
@@ -457,7 +457,7 @@ class ResDelegate(QStyledItemDelegate):
 
         # Notes
         else:
-            con = sql.connect("hostprogram.db")
+            con = create_connection()
             cur = con.cursor()
             cur.execute("UPDATE reservations SET note = ? WHERE res_id = ?",
                         (editor.text(), res_id))

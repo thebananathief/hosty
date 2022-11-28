@@ -7,7 +7,7 @@ from qtpy.QtWidgets import *
 
 import core.globals as g
 from core.dialogs import SettingsDialog, TableDialog, FloorplanDialog
-from core.globals import get_path
+from core.globals import get_path, create_connection
 from core.objects import POS_Server, POS_Table
 from docks.resDock import ResList_Dock
 from docks.servDock import ServList_Dock
@@ -104,7 +104,7 @@ class MainWindow(QMainWindow):
 
         # If we have recents to iterate through
         if len(g.recentFloorplans) > 0:
-            con = sql.connect("hostprogram.db")
+            con = create_connection()
             cur = con.cursor()
 
             # Select query is ordering plans in alphabetical, we need to sort them by the recents list
@@ -305,7 +305,7 @@ class GraphicsView(QGraphicsView):
     # Loads a floorplan onto the GraphicsView
     def load_floorplan(self, plan_id: int, temp=False):
         # Query for requested plan tables
-        con = sql.connect("hostprogram.db")
+        con = create_connection()
         # con.row_factory = sql.Row
         cur = con.cursor()
         server_count = cur.execute("SELECT server_count FROM floorplans WHERE plan_id = ?", str(plan_id)).fetchone()[0]
@@ -386,7 +386,7 @@ if __name__ == "__main__":
     QCoreApplication.setApplicationName("Hosty")
 
     # Create database tables if not already made
-    con = sql.connect("hostprogram.db")
+    con = create_connection()
     cur = con.cursor()
     cur.execute(""" CREATE TABLE IF NOT EXISTS floorplans (
                         plan_id INTEGER PRIMARY KEY,
